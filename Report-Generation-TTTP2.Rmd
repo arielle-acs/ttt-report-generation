@@ -1,0 +1,678 @@
+---
+title: "| TRACK to TREAT \n| Clinical Assessment Summary\n"
+author: "Lab for Scalable Mental Health"
+output:
+  pdf_document: default
+  word_document: default
+  html_document:
+    df_print: paged
+fontsize: 12pt
+geometry: margin=1in
+header-includes: "\\usepackage{titling} \\pretitle{\\begin{center} \\includegraphics[width=5in]{/Volumes/jslab/TRACK
+  to TREAT/Code/Reports/Reporting_Template_Documents/final-vector.png}\\LARGE\\\\}
+  \\posttitle{\\end{center}}"
+urlcolor: blue
+editor_options:
+  chunk_output_type: console
+---
+
+```{r install packages and make dfs, include = FALSE, echo=FALSE, warning=FALSE, error=FALSE}
+
+options(repos = "https://cran.r-project.org")
+
+devtools::install_github("kupietz/kableExtra")
+
+if(!require(dplyr)){install.packages('devtools')}
+library('devtools')
+
+if(!require(dplyr)){install.packages('tidyverse')}
+library('tidyverse')
+
+if(!require(gsheet)){install.packages('gsheet')}
+library('gsheet')
+
+if(!require(lubridate)){install.packages('lubridate')}
+library('lubridate')
+
+if(!require(ggplot2)){install.packages('ggplot2')}
+library('ggplot2')
+
+if(!require(knitr)){install.packages('knitr')}
+library('knitr')
+
+if(!require(kableExtra)){install.packages('kableExtra')}
+library('kableExtra')
+
+if(!require(shiny)){install.packages('shiny')}
+library('shiny')
+
+if(!require(tinytex)){install.packages('tinytex')}
+library('tinytex')
+```
+
+```{r access and prepare data, include=FALSE,echo=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+getwd()
+
+#Demographics (0 = male, 1 = female) - update for each participant
+
+saab <- 1 #saab = "sex assigned at birth"
+age <- 14 
+
+#Google sheets data
+
+df_1 <- gsheet2tbl('https://docs.google.com/spreadsheets/d/1ZH-V1ZatDYrk1E3NPDo4pJODjJA6hOyujAFIAXuMtQo/edit#gid=2018736647')
+df_2 <- gsheet2tbl('https://docs.google.com/spreadsheets/d/1ZH-V1ZatDYrk1E3NPDo4pJODjJA6hOyujAFIAXuMtQo/edit#gid=2028119048')
+```
+
+```{r create dfs, echo=FALSE, error=FALSE, warning=FALSE, include=FALSE}
+
+# Creating separate data frames
+
+df_cdi_c <- df_1 %>% filter(type == "CDI-C")
+df_cdi_p <- df_1 %>% filter(type == "CDI-P")
+df_scared_c <- df_1 %>% filter(type == "SCARED-C")
+df_scared_p <- df_1 %>% filter(type == "SCARED-P")
+df_scared_c_subscales <- df_2[grep("SCARED-C_", df_2$type), ]
+df_scared_p_subscales <- df_2[grep("SCARED-P_", df_2$type), ]
+df_cdi_c_subscales <- df_2[grep("CDI-C_", df_2$type), ] %>% 
+  select(-clinical_relevance)
+df_cdi_p_subscales <- df_2[grep("CDI-P_", df_2$type), ] %>% 
+  select(-clinical_relevance)
+```
+
+```{r thresholds cdi-p, echo=FALSE, error=FALSE, warning=FALSE, include=FALSE}
+
+# Setting severity thresholds for CDI-P plot
+
+if ((saab == 0) & (age %in% c(11,12))) {
+  low_average <- 3
+}
+
+if ((saab == 1) & (age %in% c(11,12))) {
+  low_average <- 2
+}
+
+if ((saab == 0) & (age %in% c(13:18))) {
+  low_average <- 3
+}
+
+if ((saab == 1) & (age %in% c(13:18))) {
+  low_average <- 3
+}
+
+# average to high average threshold
+
+if ((saab == 0) & (age %in% c(11,12))) {
+  avg_highavg <- 17
+}
+
+if ((saab == 1) & (age %in% c(11,12))) {
+  avg_highavg <- 16
+}
+
+if ((saab == 0) & (age %in% c(13:18))) {
+  avg_highavg <- 16
+}
+
+if ((saab == 1) & (age %in% c(13:18))) {
+  avg_highavg <- 18
+}
+
+# high average to elevated threshold
+
+if ((saab == 0) & (age %in% c(11,12))) {
+  highavg_ele <- 21
+}
+
+if ((saab == 1) & (age %in% c(11,12))) {
+  highavg_ele <- 20
+}
+
+if ((saab == 0) & (age %in% c(13:18))) {
+  highavg_ele <- 20
+}
+
+if ((saab == 1) & (age %in% c(13:18))) {
+  highavg_ele <- 22
+}
+
+# elevated to very elevated threshold
+
+if ((saab == 0) & (age %in% c(11,12))) {
+  ele_veryele <- 24
+}
+
+if ((saab == 1) & (age %in% c(11,12))) {
+  ele_veryele <- 24
+}
+
+if ((saab == 0) & (age %in% c(13:18))) {
+  ele_veryele <- 23
+}
+
+if ((saab == 1) & (age %in% c(13:18))) {
+  ele_veryele <- 26
+}
+```
+
+```{r thresholds cdi-c, echo=FALSE, warning=FALSE, error=FALSE, include=FALSE}
+
+# Setting severity thresholds for CDI-C plot
+
+if (age %in% c(11,12)) {
+  low_average_c <- 1
+}
+
+if (age %in% c(13:18)) {
+  low_average_c <- 2
+}
+
+# average to high average threshold
+
+if (age %in% c(11,12)) {
+  avg_highavg_c <- 12
+}
+
+if (age %in% c(13:18)) {
+  avg_highavg_c <- 14
+}
+
+# high average to elevated threshold
+
+if (age %in% c(11,12)) {
+  highavg_ele_c <- 17
+}
+
+if (age %in% c(13:18)) {
+  highavg_ele_c <- 21
+}
+
+# elevated to very elevated threshold
+
+if (age %in% c(11,12)) {
+  ele_veryele_c <- 22
+}
+
+if (age %in% c(13:18)) {
+  ele_veryele_c <- 27
+}
+
+```
+
+```{r Percentiles parent report, echo=FALSE, warning=FALSE, error=FALSE}
+
+# This block of code is determining percentiles for CDI-P scores. Below, I am assigning each raw score to a percentile and merging those new data frames with our existing one, df_cdi_p_subscales.  This leaves us with a new data frame called df_cdi_p_subscales_merged_3.
+
+if (age %in% c(11,12)) {
+  lookup_table_cdi_p_ep <- data.frame(current = c(51:0),
+                           subpercent_ep = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,98,98,98,97,97,95,94,92,90,87,83,79,72,63,52,41,30,18,6))
+}
+
+if (age %in% c(13:18)) {
+  lookup_table_cdi_p_ep <- data.frame(current = c(51:0),
+                           subpercent_ep = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,98,97,97,96,94,92,91,88,84,79,73,63,51,40,28,15,4))
+}
+
+if (age %in% c(11,12)) {
+  lookup_table_cdi_p_fp <- data.frame(current = c(51:0),
+                           subpercent_fp = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,98,97,96,95,94,91,88,83,79,74,66,58,51,41,29,16,7,2))
+}
+
+if (age %in% c(13:18)) {
+  lookup_table_cdi_p_fp <- data.frame(current = c(51:0),
+                           subpercent_fp = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,98,96,94,92,90,85,78,69,59,50,42,31,20,12,6,1))
+}
+
+if (age %in% c(11,12)) {
+  lookup_table_cdi_p_total <- data.frame(current = c(51:0),
+                           subpercent_total = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,98,98,98,97,97,97,96,96,95,94,93,92,91,90,89,88,85,83,79,74,70,66,61,56,50,43,37,30,24,17,11,7,4,1))
+}
+
+if (age %in% c(13:18)) {
+  lookup_table_cdi_p_total <- data.frame(current = c(51:0),
+                           subpercent_total = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,98,98,97,97,96,96,95,94,93,92,90,88,87,85,83,79,73,68,62,56,50,43,36,31,25,19,13,9,6,3,1))
+}
+
+df_cdi_p_subscales_merged <- merge(df_cdi_p_subscales, lookup_table_cdi_p_ep, by = "current")
+
+df_cdi_p_subscales_merged_2 <- merge(df_cdi_p_subscales_merged, lookup_table_cdi_p_fp, by = "current")
+
+df_cdi_p_subscales_merged_3 <- merge(df_cdi_p_subscales_merged_2, lookup_table_cdi_p_total, by = "current")
+
+
+# Now, I am using the functions 'mutate' and 'case_when' to create a column called "percentile" in the data frame df_cdi_p_subscales_merged_3. Then, I rearranged and renamed the columns to create the data frame df_cdi_p_subscales_final.
+
+df_cdi_p_subscales_final <- df_cdi_p_subscales_merged_3 %>% 
+  mutate(percentile = case_when(type == "CDI-P_Emotion" ~ df_cdi_p_subscales_merged_3$subpercent_ep,
+                                type == "CDI-P_Function" ~ df_cdi_p_subscales_merged_3$subpercent_fp,
+                                type == "CDI-P_Total" ~ df_cdi_p_subscales_merged_3$subpercent_total))
+
+df_cdi_p_subscales_final <- df_cdi_p_subscales_final[c("type", "baseline", "current", "percentile")]
+```
+
+```{r Percentiles child report, echo=FALSE, warning=FALSE, error=FALSE}
+
+# This block of code is determining percentiles for CDI-C scores in the same way as above.
+
+if (age %in% c(11,12)) {
+  lookup_table_cdi_c_total <- data.frame(current = c(51:0),
+                           subpercent_total = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,98,98,98,98,97,96,96,95,93,92,89,87,85,84,82,81,78,75,71,65,59,50,40,29,18,6))
+}
+
+if (age %in% c(13:18)) {
+  lookup_table_cdi_c_total <- data.frame(current = c(51:0),
+                           subpercent_total = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,98,98,97,97,96,95,94,93,93,92,91,90,89,87,84,82,80,77,73,69,64,59,53,45,38,30,20,12,4))
+}
+
+if (age %in% c(11,12)) {
+  lookup_table_cdi_c_ep <- data.frame(current = c(51:0),
+                           subpercent_ep = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,97,96,95,94,92,91,90,88,84,80,76,68,56,40,16))
+}
+
+if (age %in% c(13:18)) {
+  lookup_table_cdi_c_ep <- data.frame(current = c(51:0),
+                           subpercent_ep = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,98,98,97,96,95,94,93,90,87,85,83,80,74,68,59,48,34,14))
+}
+
+if (age %in% c(11,12)) {
+  lookup_table_cdi_c_nm <- data.frame(current = c(51:0),
+                           subpercent_nm = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,96,94,91,87,83,76,63,47,19))
+}
+
+if (age %in% c(13:18)) {
+  lookup_table_cdi_c_nm <- data.frame(current = c(51:0),
+                           subpercent_nm = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,98,97,96,95,92,88,83,77,69,57,42,17))
+}
+
+if (age %in% c(11,12)) {
+  lookup_table_cdi_c_nse <- data.frame(current = c(51:0),
+                           subpercent_nse = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,97,96,91,87,82,70,30))
+}
+
+if (age %in% c(13:18)) {
+  lookup_table_cdi_c_nse <- data.frame(current = c(51:0),
+                           subpercent_nse = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,97,96,94,91,86,77,62,26))
+}
+
+if (age %in% c(11,12)) {
+  lookup_table_cdi_c_fp <- data.frame(current = c(51:0),
+                           subpercent_fp = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,98,97,95,94,91,88,83,76,67,57,44,28,9))
+}
+
+if (age %in% c(13:18)) {
+  lookup_table_cdi_c_fp <- data.frame(current = c(51:0),
+                           subpercent_fp = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,98,98,97,96,94,93,90,87,82,75,65,54,43,31,19,6))
+}
+
+if (age %in% c(11,12)) {
+  lookup_table_cdi_c_ine <- data.frame(current = c(51:0),
+                           subpercent_ine = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,97,94,89,83,75,64,49,32,11))
+}
+
+if (age %in% c(13:18)) {
+  lookup_table_cdi_c_ine <- data.frame(current = c(51:0),
+                           subpercent_ine = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,97,95,93,89,83,74,62,49,36,22,8))
+}
+
+if (age %in% c(11,12)) {
+  lookup_table_cdi_c_ip <- data.frame(current = c(51:0),
+                           subpercent_ip = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,97,94,87,74,32))
+}
+
+if (age %in% c(13:18)) {
+  lookup_table_cdi_c_ip <- data.frame(current = c(51:0),
+                           subpercent_ip = c(99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,98,96,93,85,70,30))
+}
+
+df_cdi_c_subscales_merged <- merge(df_cdi_c_subscales, lookup_table_cdi_c_total, by = "current")
+
+df_cdi_c_subscales_merged_2 <- merge(df_cdi_c_subscales_merged, lookup_table_cdi_c_ep, by = "current")
+
+df_cdi_c_subscales_merged_3 <- merge(df_cdi_c_subscales_merged_2, lookup_table_cdi_c_nm, by = "current")
+
+df_cdi_c_subscales_merged_4 <- merge(df_cdi_c_subscales_merged_3, lookup_table_cdi_c_nse, by = "current")
+
+df_cdi_c_subscales_merged_5 <- merge(df_cdi_c_subscales_merged_4, lookup_table_cdi_c_fp, by = "current")
+
+df_cdi_c_subscales_merged_6 <- merge(df_cdi_c_subscales_merged_5, lookup_table_cdi_c_ine, by = "current")
+
+df_cdi_c_subscales_merged_7 <- merge(df_cdi_c_subscales_merged_6, lookup_table_cdi_c_ip, by = "current")
+
+df_cdi_c_subscales_final <- df_cdi_c_subscales_merged_7 %>% 
+  mutate(percentile = case_when(type == "CDI-C_Esteem" ~ df_cdi_c_subscales_merged_7$subpercent_nse,
+                                type == "CDI-C_Esteem" ~ df_cdi_c_subscales_merged_7$subpercent_nse,
+                                type == "CDI-C_Ineffectiveness" ~ df_cdi_c_subscales_merged_7$subpercent_ine,
+                                type == "CDI-C_Interpersonal" ~ df_cdi_c_subscales_merged_7$subpercent_ip,
+                                type == "CDI-C_Mood" ~ df_cdi_c_subscales_merged_7$subpercent_nm,
+                                type == "CDI-C_Emotion" ~ df_cdi_c_subscales_merged_7$subpercent_ep,
+                                type == "CDI-C_Function" ~ df_cdi_c_subscales_merged_7$subpercent_fp,
+                                type == "CDI-C_Total" ~ df_cdi_c_subscales_merged_7$subpercent_total))
+
+df_cdi_c_subscales_final <- df_cdi_c_subscales_final[c("type", "baseline", "current", "percentile")]
+
+```
+
+\pagebreak
+Dear NAME,
+
+You are receiving this report because your child, NAME, participated in Track to Treat through the Lab for Scalable Mental Health. This report provides the results of your child’s Depression and Mood Symptoms and Anxiety Symptoms from the questionnaires you both completed throughout the Track to Treat Study. Below are descriptions of the questionnaires, your child’s scores, and their meanings. 
+
+High scores may signal the need for further clinical evaluation and attention depending on the level of difficulties encountered in the home, at school, or in social settings. Please contact your child’s primary care or mental health provider to discuss these results. At your request, the Lab for Scalable Mental Health can provide a list of clinical resources and services accessible to any family in the United States.
+
+Thank you again for your participation in Track to Treat.
+
+\vspace*{\fill}
+Jessica L. Schleider, Ph.D.  
+\includegraphics[height=0.5in]{"/Volumes/jslab/TRACK to TREAT/Code/Reports/Reporting_Template_Documents/jschleider signature.png"}  
+Associate Professor,
+Director, Lab for Scalable Mental Health  
+Department of Medical Social Sciences
+Northwestern University  
+[jessica.schleider@northwestern.edu](mailto:jessica.schleider@northwestern.edu) 
+\pagebreak
+
+# Depression and Mood Related Symptoms #
+
+The Children’s Depression Inventory - 2 (CDI-2) is a child and parent instrument for children who are seven to seventeen years of age. It assesses cognitive, affective, and behavioral signs of depression in children and adolescents.
+
+## CDI-2: Parent Report ##
+
+```{r CDI-P table, echo=FALSE, warning=FALSE, error=FALSE}
+
+df_cdi_p_subscales_final$type[df_cdi_p_subscales_final$type == "CDI-P_Total"] <- "Overall Depression (Total Score)"
+df_cdi_p_subscales_final$type[df_cdi_p_subscales_final$type == "CDI-P_Emotion"] <- "Emotional Problems"
+df_cdi_p_subscales_final$type[df_cdi_p_subscales_final$type == "CDI-P_Function"] <- "Functional Problems"
+
+CDI_P_table <- matrix(NA, nrow = 3, ncol = 4)
+colnames(CDI_P_table) <- c("Subscales", "Baseline Score", "Current Score", "Percentile")
+CDI_P_table[, 1] <- c(df_cdi_p_subscales_final$type) 
+CDI_P_table[,2] <- c(df_cdi_p_subscales_final$baseline)
+CDI_P_table[,3] <- c(df_cdi_p_subscales_final$current)
+CDI_P_table[,4] <- c(df_cdi_p_subscales_final$percentile)
+
+kable(CDI_P_table)
+```
+
+The **Emotional Problems Score** reflects the child’s negative mood, physical symptoms, and negative self-esteem. A **_high percentile_** may indicate elevated emotional problems. The child may appear sad, irritable, fatigued, or lonely. 
+
+The **Functional Problems Score** scale score reflects issues with ineffectiveness and interpersonal problems. A **_high percentile_** may indicate elevated functional problems. The child may have problems interacting with peers, issues maintaining school performance, impaired capacity to be cooperative, or difficulty enjoying school activities.
+
+The **Overall Depression (Total Score)** reflects the number and overall severity of depressive symptoms. A **_high percentile_** may indicate an elevated number and severity of depressive symptoms.
+
+## CDI-2: Child Report ##
+
+```{r CDI-C table, echo=FALSE, warning=FALSE, error=FALSE}
+
+df_cdi_c_subscales_final$type[df_cdi_c_subscales_final$type == "CDI-C_Total"] <- "Overall Depression (Total Score)"
+df_cdi_c_subscales_final$type[df_cdi_c_subscales_final$type == "CDI-C_Emotion"] <- "Emotional Problems"
+df_cdi_c_subscales_final$type[df_cdi_c_subscales_final$type == "CDI-C_Mood"] <- "Negative Mood/Physical Symptoms"
+df_cdi_c_subscales_final$type[df_cdi_c_subscales_final$type == "CDI-C_Esteem"] <- "Negative Self-Esteem"
+df_cdi_c_subscales_final$type[df_cdi_c_subscales_final$type == "CDI-C_Function"] <- "Functional Problems"
+df_cdi_c_subscales_final$type[df_cdi_c_subscales_final$type == "CDI-C_Ineffectiveness"] <- "Ineffectiveness"
+df_cdi_c_subscales_final$type[df_cdi_c_subscales_final$type == "CDI-C_Interpersonal"] <- "Interpersonal Problems"
+
+CDI_C_table <- matrix(NA, nrow = 7, ncol = 4) 
+colnames(CDI_C_table) <- c("Subscales", "Baseline Score", "Current Score", "Percentile") 
+CDI_C_table[, 1] <- c(df_cdi_c_subscales_final$type) 
+CDI_C_table[,2] <- c(df_cdi_c_subscales_final$baseline) 
+CDI_C_table[,3] <- c(df_cdi_c_subscales_final$current) 
+CDI_C_table[,4] <- c(df_cdi_c_subscales_final$percentile) 
+
+kable(CDI_C_table)
+```
+\pagebreak
+The **Negative Self-Esteem Score** reflects the child’s low self-esteem. A **_high percentile_** may indicate elevated self-esteem problems. The child may have low self-esteem, self-dislike, and feelings of being unloved.
+
+The **Ineffectiveness Score** reflects the child’s perception of their performance. A **_high percentile_** may indicate elevated problems with self-perception. The child may perceive their abilities and school performance negatively and may be experiencing difficulty with enjoying school and other activities.
+
+The **Interpersonal Problems Score** reflects the child’s problems interacting with others. A **_high percentile_** may indicate elevated interpersonal problems. The child may have problems interacting with peers, and may have feelings of being lonely and unimportant to their family.
+
+The **Negative Mood/Physical Symptoms Score** reflects the child’s sadness or irritability and physical symptoms. A **_high percentile_** may indicate elevated problems in these areas. The child may have low moods that manifest as sadness or irritability, as well as physical symptoms related to sleep, appetite, fatigue, and aches. 
+
+The **Emotional Problems Score** reflects the child’s negative mood, physical symptoms, and negative self-esteem. A **_high percentile_** may indicate elevated emotional problems.
+
+The **Functional Problems Score** reflects issues with ineffectiveness and interpersonal problems. A **_high percentile_** may indicate elevated functional problems.
+
+The **Overall Depression (Total Score)** reflects the number and overall severity of depressive symptoms. A **_high percentile_** may indicate an elevated number and severity of depressive symptoms.
+
+## CDI-2: Percentile Explantions ##
+A percentile rank of 98+ is classified as Very Elevated (many more concerns than are typically reported). A percentile rank of 93-97 is classified as Elevated (more concerns than are typically reported). A percentile rank of 84-92 is classified as High Average (somewhat more concerns than are typically reported). A percentile rank of 16-83 is classified as Average (typical number of concerns). A percentile rank of less than 16 is classified as Low (fewer concerns than are typically reported).
+  
+If not already being addressed, **_current_** high scores may signal the need for further clinical evaluation and attention depending on the level of difficulties encountered in the home, at school, or in other settings. Please contact your child’s primary care or mental health provider to discuss these results. At your request, the Lab for Scalable Mental Health can provide a list of clinical resources and services accessible by any family in the United States.
+\pagebreak
+
+## CDI-2 Graphs ##
+These graphs provide a detailed look at how your child's **Overall Depression (Total Score)** changed at each of the six Track to Treat measurement timepoints (if data is available). The severity thresholds are shaded according to the same percentile explanations described above.
+
+```{r cdi-p plot, echo=FALSE, warning=FALSE, error=FALSE, include=TRUE}
+
+plot_1_cdi_p <- df_cdi_p %>% 
+  ggplot(aes(x=follow_up, y=value))
+
+plot_2_cdi_p <- plot_1_cdi_p + geom_line(linewidth = .8, col="black") + 
+  theme_light() + 
+  geom_point(col = "black", size = 2) +
+  ylab("Overall Depression Score") +
+  xlab("") +
+  geom_hline(yintercept = c(low_average, avg_highavg, highavg_ele, ele_veryele), linetype = "dashed") +
+  ylim(0,51)
+
+plot_3_cdi_p <- plot_2_cdi_p +
+  geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = low_average),
+            alpha = .1, fill = "green3") +
+  geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = low_average, ymax = avg_highavg),
+            alpha = .1, fill = "lightgreen") +
+  geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = avg_highavg, ymax = highavg_ele),
+            alpha = .1, fill = "khaki1") +
+  geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = highavg_ele, ymax = ele_veryele),
+            alpha = .1, fill = "sienna1") +
+  geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = ele_veryele, ymax = Inf),
+            alpha = .1, fill = "tomato") +
+  ggtitle("Youth Depression Score (Reported by Parent)") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 6), 
+                     labels = c("Baseline", "3 Months", "6 Months", "12 Months", 
+                                "18 Months", "24 Months"))
+print(plot_3_cdi_p)
+```
+
+```{r colored key cdi, echo=FALSE, warning=FALSE, error=FALSE}
+
+cdi_key <- data.frame(Severity = c("Very Elevated", "Elevated", "High Average", "Average", "Low"))
+
+kable(cdi_key) %>%
+  row_spec(1, background = "#ff644c") %>% 
+  row_spec(2, background = "#ff8444") %>% 
+  row_spec(3, background = "#fff48c") %>% 
+  row_spec(4, background = "#98ec8c") %>% 
+  row_spec(5, background = "#08cc04")
+```
+\pagebreak
+
+```{r cdi-c plot, echo=FALSE, warning=FALSE, error=FALSE, include=TRUE}
+
+plot_1_cdi_c <- df_cdi_c %>% 
+  ggplot(aes(x=follow_up, y=value))
+
+plot_2_cdi_c <- plot_1_cdi_c + geom_line(linewidth = .8, col="black") + 
+  theme_light() + 
+  geom_point(col = "black", size = 2) +
+  ylab("Overall Depression Score") +
+  xlab("") +
+  geom_hline(yintercept = c(low_average_c, avg_highavg_c, highavg_ele_c, ele_veryele_c), linetype = "dashed") +
+  ylim(0,51)
+
+plot_3_cdi_c <- plot_2_cdi_c +
+  geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = low_average_c),
+            alpha = .1, fill = "green3") +
+  geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = low_average_c, ymax = avg_highavg_c),
+            alpha = .1, fill = "lightgreen") +
+  geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = avg_highavg_c, ymax = highavg_ele_c),
+            alpha = .1, fill = "khaki1") +
+  geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = highavg_ele_c, ymax = ele_veryele_c),
+            alpha = .1, fill = "sienna1") +
+  geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = ele_veryele_c, ymax = Inf),
+            alpha = .1, fill = "tomato") +
+  ggtitle("Youth Depression Score (Reported by Child)") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 6), 
+                     labels = c("Baseline", "3 Months", "6 Months", "12 Months", 
+                                "18 Months", "24 Months"))
+print(plot_3_cdi_c)
+```
+
+```{r colored key cdi 2, echo=FALSE, warning=FALSE, error=FALSE}
+
+cdi_key <- data.frame(Severity = c("Very Elevated", "Elevated", "High Average", "Average", "Low"))
+
+kable(cdi_key) %>%
+  row_spec(1, background = "#ff644c") %>% 
+  row_spec(2, background = "#ff8444") %>% 
+  row_spec(3, background = "#fff48c") %>% 
+  row_spec(4, background = "#98ec8c") %>% 
+  row_spec(5, background = "#08cc04")
+```
+
+\pagebreak
+# Anxiety Related Symptoms #
+
+The Screen for Child Anxiety Related Disorders (SCARED) is a child and parent instrument for children who are eight to eighteen years of age. It screens for symptoms related to general anxiety disorder, separation anxiety disorder, panic disorder, social phobia, and school avoidance.
+
+## SCARED: Parent Report ##
+
+```{r SCARED-P table, echo=FALSE, warning=FALSE, error=FALSE}
+
+#Parent table
+
+df_scared_p_subscales$type[df_scared_p_subscales$type == "SCARED-P_Total"] <- "Overall Anxiety (Total Score)"
+df_scared_p_subscales$type[df_scared_p_subscales$type == "SCARED-P_Panic"] <- "Panic Disorder"
+df_scared_p_subscales$type[df_scared_p_subscales$type == "SCARED-P_Generalized"] <- "Generalized Anxiety"
+df_scared_p_subscales$type[df_scared_p_subscales$type == "SCARED-P_Separation"] <- "Separation Anxiety"
+df_scared_p_subscales$type[df_scared_p_subscales$type == "SCARED-P_Social"] <- "Social Anxiety"
+df_scared_p_subscales$type[df_scared_p_subscales$type == "SCARED-P_School"] <- "School Avoidance"
+
+SCARED_P_table <- matrix(NA, nrow = 6, ncol = 4)
+colnames(SCARED_P_table) <- c("Subscales", "Baseline Score", "Current Score", "Clinical Relevance")
+SCARED_P_table[, 1] <- c(df_scared_p_subscales$type) 
+SCARED_P_table[,2] <- c(df_scared_p_subscales$baseline) 
+SCARED_P_table[,3] <- c(df_scared_p_subscales$current)
+SCARED_P_table[,4] <- c(df_scared_p_subscales$clinical_relevance)
+
+kable(SCARED_P_table)
+```
+
+## SCARED: Child Report ##
+
+```{r SCARED-C table, echo=FALSE, warning=FALSE, error=FALSE}
+
+#Child table
+
+df_scared_c_subscales$type[df_scared_c_subscales$type == "SCARED-C_Total"] <- "Overall Anxiety (Total Score)"
+df_scared_c_subscales$type[df_scared_c_subscales$type == "SCARED-C_Panic"] <- "Panic Disorder"
+df_scared_c_subscales$type[df_scared_c_subscales$type == "SCARED-C_Generalized"] <- "Generalized Anxiety"
+df_scared_c_subscales$type[df_scared_c_subscales$type == "SCARED-C_Separation"] <- "Separation Anxiety"
+df_scared_c_subscales$type[df_scared_c_subscales$type == "SCARED-C_Social"] <- "Social Anxiety"
+df_scared_c_subscales$type[df_scared_c_subscales$type == "SCARED-C_School"] <- "School Avoidance"
+
+SCARED_C_table <- matrix(NA, nrow = 6, ncol = 4)
+colnames(SCARED_C_table) <- c("Subscales", "Baseline Score", "Current Score", "Clinical Relevance")
+SCARED_C_table[, 1] <- c(df_scared_c_subscales$type) 
+SCARED_C_table[,2] <- c(df_scared_c_subscales$baseline) 
+SCARED_C_table[,3] <- c(df_scared_c_subscales$current)
+SCARED_C_table[,4] <- c(df_scared_c_subscales$clinical_relevance)
+
+kable(SCARED_C_table)
+```
+
+## SCARED: Clinical Relevance Explantions ##
+
+A **Overall Anxiety (Total Score)** *higher than 24* may indicate the presence of an anxiety disorder. Scores higher than 40 are more specific.
+
+The **Panic Disorder Score** reflects the child’s fear of experiencing unforeseen panic attacks. A score *higher than 6* may indicate a presence of symptoms related to panic disorder or significant somatic symptoms.
+
+The **Generalized Anxiety Score** reflects the child’s persistent and excessive worry. A score *higher than 8* may indicate a presence of symptoms related to generalized anxiety disorder.
+
+The **Separation Anxiety Score** reflects the child’s recurrent and excessive worry about separation from home or from loved ones. A score *higher than 4* may indicate a presence of symptoms related to separation anxiety disorder.
+
+The **Social Anxiety Score** reflects the child’s persistent fear of one or more social or performance situations, especially in situations with or in the presence of unfamiliar people. A score *higher than 7* may indicate a presence of symptoms related to social anxiety disorder.
+
+The **School Avoidance Score** reflects the child’s distress related to attending school. A score *higher than 2* may indicate a presence of symptoms related to significant school avoidance. 
+
+If not already being addressed, **_current_** high scores may signal the need for further clinical evaluation and attention depending on the level of difficulties encountered in the home, at school, or in other settings. Please contact your child’s primary care or mental health provider to discuss these results. At your request, the Lab for Scalable Mental Health can provide a list of clinical resources and services accessible by any family in the United States.
+\pagebreak
+
+## SCARED Graphs ##
+These graphs provide a detailed look at how your child's **Overall Anxiety (Total Score)** changed at each of the six Track to Treat measurement timepoints (if data is available). The severity thresholds are shaded according to the same clinical relevance explanations described above.
+
+```{r scared-p plot, echo=FALSE, warning=FALSE, error=FALSE, include=TRUE}
+
+plot_1_scared_p <- df_scared_p %>% 
+  ggplot(aes(x=follow_up, y=value))
+
+plot_2_scared_p <- plot_1_scared_p + geom_line(linewidth = .8, col="black") + 
+  theme_light() + 
+  geom_point(col = "black", size = 2) +
+  ylab("Overall Anxiety Score") +
+  xlab("") +
+  geom_hline(yintercept = 24, linetype = "dashed") +
+  ylim(0,82)
+
+plot_3_scared_p <- plot_2_scared_p +
+  geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = 24),
+            alpha = .1, fill = "lightgreen") +
+  geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = 24, ymax = Inf),
+            alpha = .1, fill = "tomato") +
+  ggtitle("Youth Anxiety Score (Reported by Parent)") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 6), 
+                     labels = c("Baseline", "3 Months", "6 Months", "12 Months", 
+                                "18 Months", "24 Months"))
+print(plot_3_scared_p)
+```
+
+```{r colored key scared, echo=FALSE, warning=FALSE, error=FALSE}
+
+scared_key <- data.frame(Severity = c("Clinically Elevated", "Average"))
+
+kable(scared_key) %>% 
+  row_spec(2, background = "#98ec8c") %>% 
+  row_spec(1, background = "#ff644c")
+```
+\pagebreak
+
+```{r scared-c plot, echo=FALSE, warning=FALSE, error=FALSE, include=TRUE}
+
+plot_1_scared_c <- df_scared_c %>% 
+  ggplot(aes(x=follow_up, y=value))
+
+plot_2_scared_c <- plot_1_scared_c + geom_line(linewidth = .8, col="black") + 
+  theme_light() + 
+  geom_point(col = "black", size = 2) +
+  ylab("Overall Anxiety Score") +
+  xlab("") +
+  geom_hline(yintercept = 24, linetype = "dashed") +
+  ylim(0,82)
+
+plot_3_scared_c <- plot_2_scared_c +
+  geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = 24),
+            alpha = .1, fill = "lightgreen") +
+  geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = 24, ymax = Inf),
+            alpha = .1, fill = "tomato") +
+  ggtitle("Youth Anxiety Score (Reported by Child)") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 6), 
+                     labels = c("Baseline", "3 Months", "6 Months", "12 Months", 
+                                "18 Months", "24 Months"))
+print(plot_3_scared_c)
+```
+
+```{r colored key scared 2, echo=FALSE, warning=FALSE, error=FALSE}
+
+scared_key <- data.frame(Severity = c("Clinically Elevated", "Average"))
+
+kable(scared_key) %>% 
+  row_spec(2, background = "#98ec8c") %>% 
+  row_spec(1, background = "#ff644c")
+```
